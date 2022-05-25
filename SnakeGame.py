@@ -1,63 +1,41 @@
-from pygame import display, time, draw, QUIT, init, KEYDOWN, K_a, K_s, K_d, K_w
-from random import randint
 import pygame
-from numpy import sqrt
-import time as pe
-init()
+import numpy
+from Spot import Spot
+import random
 
-done = False
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-YELLOW = (255, 255, 102)
+pygame.init()
 
+GAMEOVER = False
+# mau su dung
+GRAY = (239, 235, 235)
+WHITE = (102, 0, 102)
+BLUE = (0, 0, 102)
+BLUE_1 = (0, 153, 153)
+GREEN = (153, 0, 76)
+BLACK = (43, 36, 36)
+RED = (102, 102, 0)
+
+# khai bao kich thuoc 
 cols = 25
 rows = 25 
-
 width = 600
 height = 600
-wr = width/cols
-hr = height/rows
+wr = width / cols
+hr = height / rows
+# khai bao huong
 direction = 1
 
-screen = display.set_mode([width, height])
-display.set_caption("snake_self")
-clock = time.Clock()
+screen = pygame.display.set_mode([width, height])
+pygame.display.set_caption("Snake Game A*")
+clock = pygame.time.Clock()
 fontScore = pygame.font.SysFont("comicsansms", 35)
 
+# ham tinh diem so
 def score(score):
-    value = fontScore.render("Your Score: " + str(score), True, YELLOW)
+    value = fontScore.render("Score: " + str(score), True, RED)
     screen.blit(value, [0, 0])
-class Spot:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.f = 0
-        self.g = 0
-        self.h = 0
-        self.neighbors = []
-        self.camefrom = []
-        self.obstrucle = False
-        if randint(1, 101) < 3:
-            self.obstrucle = True
 
-    def show(self, color):
-        draw.rect(screen, color, [self.x*hr+2, self.y*wr+2, hr-4, wr-4])
-
-    def add_neighbors(self):
-        if self.x > 0:
-            self.neighbors.append(grid[self.x - 1][self.y])
-        if self.y > 0:
-            self.neighbors.append(grid[self.x][self.y - 1])
-        if self.x < rows - 1:
-            self.neighbors.append(grid[self.x + 1][self.y])
-        if self.y < cols - 1:
-            self.neighbors.append(grid[self.x][self.y + 1])
-    def __str__(self) -> str:
-        return str(self.y) + " " +str(self.y)
-
+# ve duong di cua ran
 def ways(food1, snake1):
     food1.camefrom = []
     for s in snake1:
@@ -70,7 +48,6 @@ def ways(food1, snake1):
     while 1:
         #  trả về spot có spot.f bé nhất
         current1 = min(openset,key=lambda x: x.f)
-
         # openset = [openset[i] for i in range(len(openset)) if not openset[i] == current1]
         openset = list(filter(lambda x: (not x == current1),openset))
         # Them current1 vao danh sach nhung diem da di qua
@@ -85,7 +62,7 @@ def ways(food1, snake1):
                     neighbor.g = tempg
                     openset.append(neighbor)
                     # Ham heuristic
-                neighbor.h = sqrt((neighbor.x - food1.x) * 2) + sqrt((neighbor.y - food1.y) * 2)
+                neighbor.h = numpy.sqrt((neighbor.x - food1.x) * 2) + numpy.sqrt((neighbor.y - food1.y) * 2)
                 # ham f
                 neighbor.f = neighbor.g + neighbor.h
                 # Luu vị trí trước của neighbor
@@ -106,6 +83,7 @@ def ways(food1, snake1):
             grid[i][j].g = 0
     return way
 
+# lay huong di cua ran
 def getpath(food1, snake1):
     food1.camefrom = []
     for s in snake1:
@@ -132,7 +110,7 @@ def getpath(food1, snake1):
                     neighbor.g = tempg
                     openset.append(neighbor)
                     # Ham heuristic
-                neighbor.h = sqrt((neighbor.x - food1.x) * 2) + sqrt((neighbor.y - food1.y) * 2)
+                neighbor.h = numpy.sqrt((neighbor.x - food1.x) * 2) + numpy.sqrt((neighbor.y - food1.y) * 2)
                 # ham f
                 neighbor.f = neighbor.g + neighbor.h
                 # Luu vị trí trước của neighbor
@@ -160,36 +138,31 @@ def getpath(food1, snake1):
     return dir_array1
 
 
-
-
-#  sua lai doan nay
-# khoi tao cac diem
-# grid = [[Spot(i, j) for j in range(cols)] for i in range(rows)]
 grid = []
 for i in range(rows):
-    grid.append([])
-    for j in range(cols):
-        grid[i].append(Spot(i,j)) 
+      grid.append([])
+      for j in range(cols):
+            grid[i].append(Spot(i,j)) 
 for i in range(rows):
-    for j in range(cols):
-        grid[i][j].add_neighbors()
+      for j in range(cols):
+            grid[i][j].add_neighbors(grid, rows, cols)
 
 snake = [grid[round(rows/2)][round(cols/2)]]
-food = grid[randint(0, rows-1)][randint(0, cols-1)]
+food = grid[random.randint(0, rows-1)][random.randint(0, cols-1)]
 current = snake[-1]
 dir_array = getpath(food, snake)
 food_array = [food]
 way = ways(food, snake)
 
-while not done:
+while not GAMEOVER:
     clock.tick(8)
-    screen.fill(BLACK)
+    screen.fill(GRAY)
     direction = dir_array.pop(-1)
     score(len(food_array) - 1)
     if way:
         way.pop(-1)
     for spot in way:
-        spot.show(YELLOW)
+        spot.show(BLUE_1, hr, wr, screen)
 
     if direction == 0:    # down
         snake.append(grid[current.x][current.y + 1])
@@ -203,37 +176,36 @@ while not done:
 
     if current.x == food.x and current.y == food.y:
         while 1:
-            food = grid[randint(0, rows - 1)][randint(0, cols - 1)]
+            food = grid[random.randint(0, rows - 1)][random.randint(0, cols - 1)]
             if not (food.obstrucle or food in snake):
                 break
         food_array.append(food)
         dir_array = getpath(food, snake)
         way = ways(food, snake)
 
-            
     else:
         snake.pop(0)
 
     for spot in snake:
-        spot.show(WHITE)
+        spot.show(WHITE, hr, wr, screen)
 
     for i in range(rows):
         for j in range(cols):
             if grid[i][j].obstrucle:
-                grid[i][j].show(RED)
+                grid[i][j].show(BLACK, hr, wr, screen)
 
-    food.show(GREEN)
-    snake[-1].show(BLUE)
-    display.flip()
+    food.show(GREEN, hr, wr, screen)
+    snake[-1].show(BLUE, hr, wr, screen)
+    pygame.display.flip()
     for event in pygame.event.get():
-        if event.type == QUIT:
-            done = True
-        elif event.type == KEYDOWN:
-            if event.key == K_w and not direction == 0:
+        if event.type == pygame.QUIT:
+            GAMEOVER = True
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_w and not direction == 0:
                 direction = 2
-            elif event.key == K_a and not direction == 1:
+            elif event.key == pygame.K_a and not direction == 1:
                 direction = 3
-            elif event.key == K_s and not direction == 2:
+            elif event.key == pygame.K_s and not direction == 2:
                 direction = 0
-            elif event.key == K_d and not direction == 3:
+            elif event.key == pygame.K_d and not direction == 3:
                 direction = 1
